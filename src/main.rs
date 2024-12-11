@@ -18,7 +18,7 @@ impl<'a,
 #[derive(Clone, Copy, Debug, Serialize)]
 struct PlantTemps {
     iat: Celcius,
-    dat: Celcius
+    dat: Celcius,
 }
 
 #[derive(Clone, Copy, Debug, Serialize)]
@@ -44,7 +44,7 @@ struct HvacMymodel {
     indoor_at: Option<Celcius>,
     fan: Option<Fan>,
     emergency: Option<bool>,
-    zones: Option<Zones>
+    zones: Option<Zones>,
 }
 
 fn main() {
@@ -54,11 +54,11 @@ fn main() {
         indoor_at: None,
         fan: Some(Fan::Off),
         emergency: Some(false),
-        zones: None
+        zones: None,
     };
     match serde_json::to_string(&m) {
         Ok(j) => println!("Hello, {j}!"),
-        Err(e) => println!("Whoops: {e}")
+        Err(e) => println!("Whoops: {e}"),
     }
     println!("Done.");
 }
@@ -73,33 +73,27 @@ mod tests {
         indoor_at: None,
         fan: None,
         emergency: None,
-        zones: None
+        zones: None,
     };
 
     #[test]
     #[should_panic]
     fn oat_null() {
-        let me = HvacMymodel {
-            ..EMPTY_MODEL
-        };
+        let me = HvacMymodel { ..EMPTY_MODEL };
         me.outside_at.unwrap();
     }
 
     #[test]
     #[should_panic]
     fn aat_null() {
-        let me = HvacMymodel {
-            ..EMPTY_MODEL
-        };
+        let me = HvacMymodel { ..EMPTY_MODEL };
         me.ambient_at.unwrap();
     }
 
     #[test]
     #[should_panic]
     fn fan_null() {
-        let me = HvacMymodel {
-            ..EMPTY_MODEL
-        };
+        let me = HvacMymodel { ..EMPTY_MODEL };
         me.fan.unwrap();
     }
 }
