@@ -1,9 +1,11 @@
 pub(crate) mod honeywell_tz4;
+pub(crate) mod hvac;
 
-use honeywell_tz4::{Celcius, Fan, HvacMymodel, PlantTemps, Zone, Zones};
+use crate::hvac::Celcius;
+use honeywell_tz4::{Fan, HvacHoneywellTz4};
 
 fn main() {
-    let m = HvacMymodel {
+    let m = HvacHoneywellTz4 {
         outside_at: None,
         ambient_at: Some(Celcius(15.)),
         indoor_at: None,
