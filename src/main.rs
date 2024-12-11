@@ -1,14 +1,11 @@
 pub(crate) mod honeywell_tz4;
 pub(crate) mod hvac;
 
-use crate::hvac::Celcius;
 use honeywell_tz4::{Fan, HvacHoneywellTz4};
 
 fn main() {
     let m = HvacHoneywellTz4 {
-        outside_at: None,
-        ambient_at: Some(Celcius(15.)),
-        indoor_at: None,
+        temps: None,
         fan: Some(Fan::Off),
         emergency: Some(false),
         zones: None,

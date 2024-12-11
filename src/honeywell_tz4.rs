@@ -1,29 +1,27 @@
 // Honeywell TotalZone 4 HVAC controller
 
-use crate::hvac::{Celcius, PlantTemps};
-use serde::Serialize;
+use crate::hvac::{EnvironmentTemps, PlantTemps};
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
 pub enum Fan {
     _On { temps: PlantTemps },
     _Purge { temps: PlantTemps },
     Off,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub enum Zone {
     _Active,
     _Inactive,
 }
 
-#[derive(Clone, Copy, Debug, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct Zones(pub [Zone; 4]);
 
-#[derive(Clone, Copy, Debug, Serialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct HvacHoneywellTz4 {
-    pub outside_at: Option<Celcius>,
-    pub ambient_at: Option<Celcius>,
-    pub indoor_at: Option<Celcius>,
+    pub temps: Option<EnvironmentTemps>,
     pub fan: Option<Fan>,
     pub emergency: Option<bool>,
     pub zones: Option<Zones>,
@@ -34,9 +32,7 @@ mod tests {
     use super::*;
 
     static EMPTY_MODEL: HvacHoneywellTz4 = HvacHoneywellTz4 {
-        outside_at: None,
-        ambient_at: None,
-        indoor_at: None,
+        temps: None,
         fan: None,
         emergency: None,
         zones: None,
@@ -46,14 +42,14 @@ mod tests {
     #[should_panic]
     fn oat_null() {
         let me = HvacHoneywellTz4 { ..EMPTY_MODEL };
-        me.outside_at.unwrap();
+        me.temps.unwrap().outside_at.unwrap();
     }
 
     #[test]
     #[should_panic]
     fn aat_null() {
         let me = HvacHoneywellTz4 { ..EMPTY_MODEL };
-        me.ambient_at.unwrap();
+        me.temps.unwrap().plant_at.unwrap();
     }
 
     #[test]

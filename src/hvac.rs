@@ -19,6 +19,13 @@ pub struct PlantTemps {
     pub dat: Celcius,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
+pub struct EnvironmentTemps {
+    pub outside_at: Option<Celcius>,
+    pub plant_at: Option<Celcius>,
+    pub indoor_at: Option<Celcius>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
