@@ -50,7 +50,7 @@ struct HvacMymodel {
 fn main() {
     let m = HvacMymodel {
         outside_at: None,
-        ambient_at: Some(Celcius(15.)),
+    ambient_at: Some(Celcius(15.)),
         indoor_at: None,
         fan: Some(Fan::Off),
         emergency: Some(false),
