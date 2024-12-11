@@ -1,19 +1,19 @@
 use float_cmp::approx_eq;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct Celcius(pub f32);
 
 impl PartialEq for Celcius {
     fn eq(&self, other: &Self) -> bool {
         println!("eq({self:?}, {other:?})");
-        // ulps=10_000 gives 0.01 tolerance but not 0.02 at 20.x, empirically.
+        // One-hundredth C is "same" for our purposes, and eliminates FP tolerance issues
         let close_enough = approx_eq!(f32, self.0, other.0, epsilon = 0.01);
         close_enough
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
 pub struct PlantTemps {
     pub iat: Celcius,
     pub dat: Celcius,
@@ -41,5 +41,26 @@ mod tests {
     #[test]
     fn not_close_temps_not_equal() {
         assert_ne!(Celcius(20.), Celcius(30.));
+        assert_ne!(Celcius(10.0), Celcius(10.2));
+        assert_ne!(Celcius(0.0), Celcius(0.2));
+        assert_ne!(Celcius(-0.1), Celcius(0.1));
+        assert_ne!(Celcius(-10.0), Celcius(-10.2));
+    }
+
+    #[test]
+    fn json_temperature() {
+        let c = Celcius(15.);
+        assert_eq!(serde_json::to_string(&c).unwrap(), "15.0");
+    }
+
+    #[test]
+    fn json_planttemps_roundtrip() {
+        let p = PlantTemps {
+            iat: Celcius(16.),
+            dat: Celcius(26.5),
+        };
+        let p_json = serde_json::to_string(&p).unwrap();
+        let p2: PlantTemps = serde_json::from_str(&p_json).unwrap();
+        assert_eq!(p, p2);
     }
 }
