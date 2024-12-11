@@ -24,6 +24,7 @@ pub struct HvacHoneywellTz4 {
     pub temps: Option<EnvironmentTemps>,
     pub fan: Option<Fan>,
     pub emergency: Option<bool>,
+    pub cool: Option<bool>,
     pub zones: Option<Zones>,
 }
 
@@ -37,6 +38,7 @@ mod tests {
         temps: None,
         fan: None,
         emergency: None,
+        cool: None,
         zones: None,
     };
 
@@ -85,6 +87,7 @@ mod tests {
                 }),
             }),
             emergency: Some(false),
+            cool: Some(false),
             zones: Some(Zones([
                 Zone::Active,
                 Zone::Inactive,

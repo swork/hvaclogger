@@ -8,6 +8,7 @@ fn main() {
         temps: None,
         fan: Some(Fan::Off),
         emergency: Some(false),
+        cool: None,
         zones: None,
     };
     match serde_json::to_string(&m) {
