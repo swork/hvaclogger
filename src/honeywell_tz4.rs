@@ -1,25 +1,25 @@
-// Honeywell TotalZone 4 HVAC controller
+// Metrics from environment with Honeywell TotalZone 4 HVAC controller
 
 use crate::hvac::{EnvironmentTemps, PlantTemps};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
 pub enum Fan {
-    _On { temps: PlantTemps },
-    _Purge { temps: PlantTemps },
+    On { temps: Option<PlantTemps> },
+    _Purge { temps: Option<PlantTemps> },
     Off,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub enum Zone {
-    _Active,
-    _Inactive,
+    Active,
+    Inactive,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
 pub struct Zones(pub [Zone; 4]);
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HvacHoneywellTz4 {
     pub temps: Option<EnvironmentTemps>,
     pub fan: Option<Fan>,
@@ -29,6 +29,8 @@ pub struct HvacHoneywellTz4 {
 
 #[cfg(test)]
 mod tests {
+    use crate::hvac::Celcius;
+
     use super::*;
 
     static EMPTY_MODEL: HvacHoneywellTz4 = HvacHoneywellTz4 {
@@ -66,5 +68,32 @@ mod tests {
             ..EMPTY_MODEL
         };
         assert_eq!(me.fan.unwrap(), Fan::Off);
+    }
+
+    #[test]
+    fn json_plant_roundtrip() {
+        let p = HvacHoneywellTz4 {
+            temps: Some(EnvironmentTemps {
+                outside_at: Some(Celcius(4.4)),
+                plant_at: Some(Celcius(14.1)),
+                indoor_at: Some(Celcius(18.1)),
+            }),
+            fan: Some(Fan::On {
+                temps: Some(PlantTemps {
+                    iat: Celcius(16.),
+                    dat: Celcius(26.5),
+                }),
+            }),
+            emergency: Some(false),
+            zones: Some(Zones([
+                Zone::Active,
+                Zone::Inactive,
+                Zone::Inactive,
+                Zone::Active,
+            ])),
+        };
+        let p_json = serde_json::to_string(&p).unwrap();
+        let p2: HvacHoneywellTz4 = serde_json::from_str(&p_json).unwrap();
+        assert_eq!(p, p2);
     }
 }
