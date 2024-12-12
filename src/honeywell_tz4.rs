@@ -1,12 +1,12 @@
 // Metrics from environment with Honeywell TotalZone 4 HVAC controller
 
-use crate::hvac::{EnvironmentTemps, PlantTemps};
+use crate::hvac::{EnvironmentTemps, Observation, PlantTemps};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
 pub enum Fan {
     On { temps: Option<PlantTemps> },
-    _Purge { temps: Option<PlantTemps> },
+    Purge { temps: Option<PlantTemps> },
     Off,
 }
 
@@ -21,12 +21,15 @@ pub struct Zones(pub [Zone; 4]);
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HvacHoneywellTz4 {
+    pub testing: Option<bool>,
     pub temps: Option<EnvironmentTemps>,
     pub fan: Option<Fan>,
     pub emergency: Option<bool>,
     pub cool: Option<bool>,
     pub zones: Option<Zones>,
 }
+
+impl Observation for HvacHoneywellTz4 {}
 
 #[cfg(test)]
 mod tests {
@@ -35,6 +38,7 @@ mod tests {
     use super::*;
 
     static EMPTY_MODEL: HvacHoneywellTz4 = HvacHoneywellTz4 {
+        testing: None,
         temps: None,
         fan: None,
         emergency: None,
@@ -75,6 +79,7 @@ mod tests {
     #[test]
     fn json_plant_roundtrip() {
         let p = HvacHoneywellTz4 {
+            testing: None,
             temps: Some(EnvironmentTemps {
                 outside_at: Some(Celcius(4.4)),
                 plant_at: Some(Celcius(14.1)),
@@ -82,8 +87,8 @@ mod tests {
             }),
             fan: Some(Fan::On {
                 temps: Some(PlantTemps {
-                    iat: Celcius(16.),
-                    dat: Celcius(26.5),
+                    iat: Some(Celcius(16.)),
+                    dat: Some(Celcius(26.5)),
                 }),
             }),
             emergency: Some(false),

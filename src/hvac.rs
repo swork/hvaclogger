@@ -1,6 +1,8 @@
 use float_cmp::approx_eq;
 use serde::{Deserialize, Serialize};
 
+pub trait Observation {}
+
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct Celcius(pub f32);
 
@@ -15,8 +17,8 @@ impl PartialEq for Celcius {
 
 #[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
 pub struct PlantTemps {
-    pub iat: Celcius,
-    pub dat: Celcius,
+    pub iat: Option<Celcius>,
+    pub dat: Option<Celcius>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
@@ -63,8 +65,8 @@ mod tests {
     #[test]
     fn json_planttemps_roundtrip() {
         let p = PlantTemps {
-            iat: Celcius(16.),
-            dat: Celcius(26.5),
+            iat: Some(Celcius(16.)),
+            dat: Some(Celcius(26.5)),
         };
         let p_json = serde_json::to_string(&p).unwrap();
         let p2: PlantTemps = serde_json::from_str(&p_json).unwrap();
