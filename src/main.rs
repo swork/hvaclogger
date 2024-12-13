@@ -113,5 +113,5 @@ fn send() {
     let cb = Arc::new(Mutex::new(ExampleConcreteBlinker::new()));
     let mut q = ObservationQueueFront::new(cb);
     q.submit(m);
-    // q.end_when_idle();
+    q.end_when_idle();
 }

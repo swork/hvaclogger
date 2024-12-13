@@ -5,13 +5,14 @@ use std::thread;
 
 pub struct ObservationQueueFront<T: Serialize + Send> {
     tx: mpsc::Sender<Arc<Mutex<T>>>,
+    join_handle: thread::JoinHandle<i32>,
 }
 
 impl<T: Serialize + Send + 'static> ObservationQueueFront<T> {
     pub fn new(blinker: Arc<Mutex<dyn ConcreteBlinker + Send + Sync>>) -> ObservationQueueFront<T> {
         let (tx, rx) = mpsc::channel();
-        start_backend(rx, blinker);
-        ObservationQueueFront { tx }
+        let join_handle = start_backend(rx, blinker);
+        ObservationQueueFront { tx, join_handle }
     }
 
     pub fn submit(&mut self, observation: T) {
@@ -21,6 +22,20 @@ impl<T: Serialize + Send + 'static> ObservationQueueFront<T> {
             }
             _ => {}
         };
+    }
+
+    pub fn end_when_idle(self) {
+        let tx = self.tx; // move out from reference
+        drop(tx);
+        let j = self.join_handle;
+        match j.join() {
+            Ok(v) => {
+                println!("Ending program, backend join() value: {v}")
+            }
+            Err(e) => {
+                println!("Ending program, join() error: {e:#?}")
+            }
+        }
     }
 }
 
@@ -37,14 +52,14 @@ where
 fn start_backend<T: Serialize + Send + 'static>(
     rx: mpsc::Receiver<Arc<Mutex<T>>>,
     concrete_blinker: Arc<Mutex<dyn ConcreteBlinker + Send + Sync>>,
-) -> () {
-    thread::spawn(|| run_backend(rx, concrete_blinker));
+) -> thread::JoinHandle<i32> {
+    thread::spawn(|| run_backend(rx, concrete_blinker))
 }
 
 fn run_backend<T: Serialize + Send>(
     rx_item: mpsc::Receiver<Arc<Mutex<T>>>,
     concrete_blinker: Arc<Mutex<dyn ConcreteBlinker + Send + Sync>>,
-) -> () {
+) -> i32 {
     let queue = Vec::<Arc<Mutex<T>>>::new();
     let rx = rx_item;
     let blinker_controller = Blinker::new(concrete_blinker);
@@ -60,22 +75,23 @@ fn run_backend<T: Serialize + Send>(
         )) {
             Ok(msg) => {
                 oqb.add_newest(msg);
-                oqb.blinker_controller.start_busy();
+                oqb.blinker_controller = oqb.blinker_controller.start_busy();
                 if oqb.file_observations() {
-                    oqb.blinker_controller.start_success();
+                    oqb.blinker_controller = oqb.blinker_controller.start_success();
                 } else {
-                    oqb.blinker_controller.start_trouble();
+                    oqb.blinker_controller = oqb.blinker_controller.start_trouble();
                 };
             }
             Err(mpsc::RecvTimeoutError::Timeout) => {
                 oqb.blinker_controller.next();
             }
             _ => {
-                println!("Error in backend rx. Has front-end disconnected?");
+                println!("Has front-end disconnected?");
                 break;
             }
         }
     }
+    0
 }
 
 impl<T: Serialize + Send> ObservationQueueBack<T> {
