@@ -1,8 +1,6 @@
 use float_cmp::approx_eq;
 use serde::{Deserialize, Serialize};
 
-pub trait Observation {}
-
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct Celcius(pub f32);
 

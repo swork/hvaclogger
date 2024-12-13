@@ -1,12 +1,17 @@
+use blinkie::ExampleConcreteBlinker;
+use honeywell_tz4::{Fan, HvacHoneywellTz4, Zone, Zones};
+use hvac::{Celcius, EnvironmentTemps, PlantTemps};
+use log::ObservationQueueFront;
+use rand::prelude::*;
+use std::{
+    env,
+    sync::{Arc, Mutex},
+};
+
+pub(crate) mod blinkie;
 pub(crate) mod honeywell_tz4;
 pub(crate) mod hvac;
 pub(crate) mod log;
-
-use honeywell_tz4::{Fan, HvacHoneywellTz4, Zone, Zones};
-use hvac::{Celcius, EnvironmentTemps, PlantTemps};
-use log::ObservationQueue;
-use rand::prelude::*;
-use std::env;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -105,7 +110,8 @@ fn send() {
 
     println!("send: {m:?}");
 
-    let mut q = ObservationQueue::new();
-    let result = q.submit(m);
-    println!("sent: {result}");
+    let cb = Arc::new(Mutex::new(ExampleConcreteBlinker::new()));
+    let mut q = ObservationQueueFront::new(cb);
+    q.submit(m);
+    // q.end_when_idle();
 }

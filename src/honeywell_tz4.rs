@@ -1,6 +1,6 @@
 // Metrics from environment with Honeywell TotalZone 4 HVAC controller
 
-use crate::hvac::{EnvironmentTemps, Observation, PlantTemps};
+use crate::hvac::{EnvironmentTemps, PlantTemps};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
@@ -28,8 +28,6 @@ pub struct HvacHoneywellTz4 {
     pub cool: Option<bool>,
     pub zones: Option<Zones>,
 }
-
-impl Observation for HvacHoneywellTz4 {}
 
 #[cfg(test)]
 mod tests {
