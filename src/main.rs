@@ -2,6 +2,7 @@ use blinkie::ExampleConcreteBlinker;
 use honeywell_tz4::{Fan, HvacHoneywellTz4, Zone, Zones};
 use hvac::{Celcius, EnvironmentTemps, PlantTemps};
 use log::ObservationQueueFront;
+use poster::Poster;
 use rand::prelude::*;
 use std::{
     env,
@@ -12,6 +13,7 @@ pub(crate) mod blinkie;
 pub(crate) mod honeywell_tz4;
 pub(crate) mod hvac;
 pub(crate) mod log;
+pub(crate) mod poster;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -110,8 +112,17 @@ fn send() {
 
     println!("send: {m:?}");
 
-    let cb = Arc::new(Mutex::new(ExampleConcreteBlinker::new()));
-    let mut q = ObservationQueueFront::new(cb);
+    struct TestConcretePoster {}
+    impl TestConcretePoster {
+        fn new() -> TestConcretePoster {
+            TestConcretePoster {}
+        }
+    }
+    impl Poster<HvacHoneywellTz4> for TestConcretePoster {}
+
+    let concrete_poster = Arc::new(Mutex::new(TestConcretePoster::new()));
+    let concrete_blinker = Arc::new(Mutex::new(ExampleConcreteBlinker::new()));
+    let mut q = ObservationQueueFront::new(concrete_poster, concrete_blinker);
     q.submit(m);
     q.end_when_idle();
 }

@@ -1,4 +1,5 @@
 use crate::blinkie::{Blinker, BlinkerController, ConcreteBlinker};
+use crate::poster::Poster;
 use serde::Serialize;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
@@ -9,9 +10,12 @@ pub struct ObservationQueueFront<T: Serialize + Send> {
 }
 
 impl<T: Serialize + Send + 'static> ObservationQueueFront<T> {
-    pub fn new(blinker: Arc<Mutex<dyn ConcreteBlinker + Send + Sync>>) -> ObservationQueueFront<T> {
+    pub fn new(
+        concrete_poster: Arc<Mutex<dyn Poster<T> + Send + Sync>>,
+        concrete_blinker: Arc<Mutex<dyn ConcreteBlinker + Send + Sync>>,
+    ) -> ObservationQueueFront<T> {
         let (tx, rx) = mpsc::channel();
-        let join_handle = start_backend(rx, blinker);
+        let join_handle = start_backend(rx, concrete_poster, concrete_blinker);
         ObservationQueueFront { tx, join_handle }
     }
 
@@ -46,18 +50,21 @@ where
     queue: Vec<Arc<Mutex<T>>>,
     have_clock_init: bool,
     rx: mpsc::Receiver<Arc<Mutex<T>>>,
+    concrete_poster: Arc<Mutex<dyn Poster<T>>>,
     blinker_controller: Box<dyn BlinkerController>,
 }
 
 fn start_backend<T: Serialize + Send + 'static>(
     rx: mpsc::Receiver<Arc<Mutex<T>>>,
+    concrete_poster: Arc<Mutex<dyn Poster<T> + Send + Sync>>,
     concrete_blinker: Arc<Mutex<dyn ConcreteBlinker + Send + Sync>>,
 ) -> thread::JoinHandle<i32> {
-    thread::spawn(|| run_backend(rx, concrete_blinker))
+    thread::spawn(|| run_backend(rx, concrete_poster, concrete_blinker))
 }
 
 fn run_backend<T: Serialize + Send>(
     rx_item: mpsc::Receiver<Arc<Mutex<T>>>,
+    concrete_poster: Arc<Mutex<dyn Poster<T> + Send + Sync>>,
     concrete_blinker: Arc<Mutex<dyn ConcreteBlinker + Send + Sync>>,
 ) -> i32 {
     let queue = Vec::<Arc<Mutex<T>>>::new();
@@ -65,6 +72,7 @@ fn run_backend<T: Serialize + Send>(
     let blinker_controller = Blinker::new(concrete_blinker);
     let mut oqb = ObservationQueueBack::<T> {
         rx,
+        concrete_poster,
         blinker_controller,
         queue,
         have_clock_init: false,
@@ -108,8 +116,16 @@ impl<T: Serialize + Send> ObservationQueueBack<T> {
         }
     }
 
-    fn file_observations(&self) -> bool {
-        true
+    fn file_observations(&mut self) -> bool {
+        let success = self
+            .concrete_poster
+            .lock()
+            .unwrap()
+            .post(&self.queue[0].lock().unwrap()); // too dumb, just sends one! TODO
+        if success {
+            self.queue.clear()
+        }
+        success
     }
 }
 
